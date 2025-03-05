@@ -33,8 +33,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -42,7 +40,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 import javax.annotation.Resource;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
@@ -457,12 +454,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     }
 
-    /**
-     * 清理图片文件
-     */
-    private void clearPictureFile(Picture oldPicture) {
-
-    }
 
 
 
@@ -483,6 +474,19 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     }
 
 
+    @Override
+    public List<Picture> getListBySpaceId(Long spaceId, Long userId) {
+        return lambdaQuery()
+                .eq(Picture::getSpaceId, spaceId)
+                .eq(Picture::getUserId, userId)
+                .eq(Picture::getIsDelete, 0)
+                .list();
+    }
+
+    @Override
+    public void clearPictureFile(Picture picture) {
+        // 实现文件存储服务的清理逻辑
+    }
 
 
 

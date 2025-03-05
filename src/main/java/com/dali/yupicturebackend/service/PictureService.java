@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
 * @author 86159
@@ -71,4 +72,8 @@ public interface PictureService extends IService<Picture> {
     void deletePictureService(long pictureId, User loginUser);
 
     void checkPictureAuth(User loginUser, Picture picture);
+
+    List<Picture> getListBySpaceId(Long spaceId, Long userId);
+
+    void clearPictureFile(Picture picture);
 }

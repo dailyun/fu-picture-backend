@@ -1,11 +1,13 @@
 package com.dali.yupicturebackend.model.picture;
 
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 import java.util.List;
 
 @Data
+@Accessors(chain = true)
 public class PictureUpdateRequest implements Serializable {
   
     /**  
@@ -32,6 +34,12 @@ public class PictureUpdateRequest implements Serializable {
      * 标签  
      */  
     private List<String> tags;
+
+    /**
+     * 空间 id
+     */
+    private Long spaceId;
+
 
 
     private static final long serialVersionUID = 1L;  

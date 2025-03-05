@@ -40,8 +40,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
-
+import com.dali.yupicturebackend.utils.pictureUtils;
 @Slf4j
+@RequestMapping("/picture")
 @RestController
 public class PictureController {
     @Resource
@@ -49,8 +50,10 @@ public class PictureController {
     @Resource
     private UserService userService;
 
-    @Autowired
+
+    @Resource
     private StringRedisTemplate stringRedisTemplate;
+
     /**
      * 上传图片（可重新上传）
      */
@@ -75,16 +78,7 @@ public class PictureController {
         }
         User loginUser = userService.getLoginUser(request);
         long id = deleteRequest.getId();
-        // 判断是否存在
-        Picture oldPicture = pictureService.getById(id);
-        ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
-        // 仅本人或管理员可删除
-        if (!oldPicture.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
-            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
-        }
-        // 操作数据库
-        boolean result = pictureService.removeById(id);
-        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        pictureService.deletePictureService(id,loginUser);
         return ResultUtils.success(true);
     }
 
@@ -144,6 +138,13 @@ public class PictureController {
         // 查询数据库
         Picture picture = pictureService.getById(id);
         ThrowUtils.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR);
+        // 空间权限校验
+        Long spaceId = picture.getSpaceId();
+        if (spaceId != null) {
+            User loginUser = userService.getLoginUser(request);
+            pictureService.checkPictureAuth(loginUser, picture);
+        }
+
         // 获取封装类
         return ResultUtils.success(pictureService.getPictureVO(picture, request));
     }

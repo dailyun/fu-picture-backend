@@ -66,4 +66,9 @@ public interface PictureService extends IService<Picture> {
     );
 
 
+
+
+    void deletePictureService(long pictureId, User loginUser);
+
+    void checkPictureAuth(User loginUser, Picture picture);
 }

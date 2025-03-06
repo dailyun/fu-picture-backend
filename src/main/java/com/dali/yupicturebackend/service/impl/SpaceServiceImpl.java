@@ -156,9 +156,9 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space> implements
     public QueryWrapper<Space> getQueryWrapper(SpaceQueryRequest request) {
         return new QueryWrapper<Space>()
                 .eq(ObjUtil.isNotEmpty(request.getId()), "id", request.getId())
-                .eq(ObjUtil.isNotEmpty(request.getUserId()), "user_id", request.getUserId())
-                .like(StringUtils.isNotBlank(request.getSpaceName()), "space_name", request.getSpaceName())
-                .eq(ObjUtil.isNotEmpty(request.getSpaceLevel()), "space_level", request.getSpaceLevel())
+                .eq(ObjUtil.isNotEmpty(request.getUserId()), "userId", request.getUserId())
+                .like(StringUtils.isNotBlank(request.getSpaceName()), "spaceName", request.getSpaceName())
+                .eq(ObjUtil.isNotEmpty(request.getSpaceLevel()), "spaceLevel", request.getSpaceLevel())
                 .orderBy(StringUtils.isNotBlank(request.getSortField()),
                         "ascend".equals(request.getSortOrder()),
                         request.getSortField());
@@ -205,7 +205,7 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space> implements
     }
 
     private boolean isExistSpaceByUserId(Long userId) {
-        return count(new QueryWrapper<Space>().eq("user_id", userId)) > 0;
+        return count(new QueryWrapper<Space>().eq("userId", userId)) > 0;
     }
 
     private void validDeleteSpace(Long spaceId, User loginUser) {

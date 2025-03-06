@@ -74,7 +74,8 @@ public class SpaceController {
     }
 
     @PostMapping("/add")
-    public BaseResponse<Boolean> addSpace(@RequestBody SpaceAddRequest spaceAddRequest, User loginUser) {
+    public BaseResponse<Boolean> addSpace(@RequestBody SpaceAddRequest spaceAddRequest,HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
 
         spaceService.addSpace(spaceAddRequest, loginUser);
         return ResultUtils.success(true);

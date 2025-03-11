@@ -133,7 +133,7 @@
                 <version>${spring-boot.version}</version>
                 <configuration>
                     <mainClass>com.dali.yupicturebackend.YuPictureBackendApplication</mainClass>
-                    <skip>true</skip>
+
                 </configuration>
                 <executions>
                     <execution>

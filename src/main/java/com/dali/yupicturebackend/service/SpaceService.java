@@ -10,6 +10,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.dali.yupicturebackend.model.entity.User;
 import com.dali.yupicturebackend.model.vo.SpaceVO;
 import org.springframework.data.domain.Page;
+import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -18,6 +19,7 @@ import javax.servlet.http.HttpServletRequest;
 * @description 针对表【space(空间)】的数据库操作Service
 * @createDate 2025-03-03 15:45:01
 */
+@Service
 public interface SpaceService extends IService<Space> {
     /**
      * 创建空间

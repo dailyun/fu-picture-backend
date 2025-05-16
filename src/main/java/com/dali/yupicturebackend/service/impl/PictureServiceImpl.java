@@ -221,6 +221,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Long userId = pictureQueryRequest.getUserId();
         String sortField = pictureQueryRequest.getSortField();
         String sortOrder = pictureQueryRequest.getSortOrder();
+        Long spaceId = pictureQueryRequest.getSpaceId();
+        boolean nullSpaceId =  pictureQueryRequest.isNullSpaceId();
         // 从多字段中搜索
         if (StrUtil.isNotBlank(searchText)) {
             // 需要拼接查询条件
@@ -250,6 +252,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         queryWrapper.eq(ObjUtil.isNotEmpty(picWidth), "picWidth", picWidth);
         queryWrapper.eq(ObjUtil.isNotEmpty(picHeight), "picHeight", picHeight);
         queryWrapper.eq(ObjUtil.isNotEmpty(picSize), "picSize", picSize);
+
+        queryWrapper.eq(ObjUtil.isNotEmpty(spaceId), "spaceId", spaceId);
+        queryWrapper.isNull(nullSpaceId, "spaceId");
 
         queryWrapper.eq(ObjUtil.isNotEmpty(picScale), "picScale", picScale);
         // JSON 数组查询

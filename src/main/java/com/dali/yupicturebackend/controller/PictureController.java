@@ -14,6 +14,7 @@ import com.dali.yupicturebackend.exception.ThrowUtils;
 import com.dali.yupicturebackend.model.dto.picture.PictureUploadByBatchRequest;
 import com.dali.yupicturebackend.model.dto.picture.PictureUploadRequest;
 import com.dali.yupicturebackend.model.entity.Picture;
+import com.dali.yupicturebackend.model.entity.Space;
 import com.dali.yupicturebackend.model.entity.User;
 import com.dali.yupicturebackend.model.enums.PictureReviewStatusEnum;
 import com.dali.yupicturebackend.model.picture.PictureEditRequest;
@@ -23,6 +24,7 @@ import com.dali.yupicturebackend.model.picture.PictureUpdateRequest;
 import com.dali.yupicturebackend.model.vo.PictureTagCategory;
 import com.dali.yupicturebackend.model.vo.PictureVO;
 import com.dali.yupicturebackend.service.PictureService;
+import com.dali.yupicturebackend.service.SpaceService;
 import com.dali.yupicturebackend.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -49,7 +51,8 @@ public class PictureController {
     private PictureService pictureService;
     @Resource
     private UserService userService;
-
+    @Resource
+    private SpaceService spaceService;
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
@@ -174,8 +177,23 @@ public class PictureController {
         long size = pictureQueryRequest.getPageSize();
         // 限制爬虫
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
-        // 普通用户默认只能查看已过审的数据
-        pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+        // 空间权限校验
+        Long spaceId = pictureQueryRequest.getSpaceId();
+// 公开图库
+        if (spaceId == null) {
+            // 普通用户默认只能查看已过审的公开数据
+            pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+            pictureQueryRequest.setNullSpaceId(true);
+        } else {
+            // 私有空间
+            User loginUser = userService.getLoginUser(request);
+            Space space = spaceService.getById(spaceId);
+            ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "空间不存在");
+            if (!loginUser.getId().equals(space.getUserId())) {
+                throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "没有空间权限");
+            }
+        }
+
 // 查询数据库
         Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
                 pictureService.getQueryWrapper(pictureQueryRequest));
@@ -183,6 +201,9 @@ public class PictureController {
         // 获取封装类
         return ResultUtils.success(pictureService.getPictureVOPage(picturePage, request));
     }
+
+
+
 
     /**
      * 编辑图片（给用户使用）

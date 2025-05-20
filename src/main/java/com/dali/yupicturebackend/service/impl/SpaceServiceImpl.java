@@ -2,6 +2,7 @@ package com.dali.yupicturebackend.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjUtil;
+import cn.hutool.core.util.StrUtil;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
@@ -16,11 +17,15 @@ import com.dali.yupicturebackend.model.dto.space.SpaceDeleteRequest;
 import com.dali.yupicturebackend.model.dto.space.SpaceQueryRequest;
 import com.dali.yupicturebackend.model.entity.Picture;
 import com.dali.yupicturebackend.model.entity.Space;
+import com.dali.yupicturebackend.model.entity.SpaceUser;
 import com.dali.yupicturebackend.model.entity.User;
 import com.dali.yupicturebackend.model.enums.SpaceLevelEnum;
+import com.dali.yupicturebackend.model.enums.SpaceRoleEnum;
+import com.dali.yupicturebackend.model.enums.SpaceTypeEnum;
 import com.dali.yupicturebackend.model.vo.SpaceVO;
 import com.dali.yupicturebackend.service.PictureService;
 import com.dali.yupicturebackend.service.SpaceService;
+import com.dali.yupicturebackend.service.SpaceUserService;
 import com.dali.yupicturebackend.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -28,6 +33,8 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.CollectionUtils;
+
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,21 +47,44 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space> implements
     private final TransactionTemplate transactionTemplate;
     private final UserService userService;
     private final PictureService pictureService;
+    private final SpaceUserService spaceUserService;
+
+
     // 添加 @Lazy 注解延迟加载
 
     private final Map<Long, Object> lockMap = new ConcurrentHashMap<>();
 
     public SpaceServiceImpl(TransactionTemplate transactionTemplate,
                             UserService userService,
-                            @Lazy PictureService pictureService) {
+                            @Lazy PictureService pictureService,
+                            @Lazy SpaceUserService spaceUserService) {
         this.transactionTemplate = transactionTemplate;
         this.userService = userService;
         this.pictureService = pictureService;
+        this.spaceUserService = spaceUserService;
+
     }
 
     @Override
-    public long addSpace(SpaceAddRequest request, User loginUser) {
-        Space space = buildInsertSpace(request, loginUser);
+    public long addSpace(SpaceAddRequest spaceAddRequest, User loginUser) {
+
+        // 默认值
+        if (StrUtil.isBlank(spaceAddRequest.getSpaceName())) {
+            spaceAddRequest.setSpaceName("默认空间");
+        }
+        if (spaceAddRequest.getSpaceLevel() == null) {
+            spaceAddRequest.setSpaceLevel(SpaceLevelEnum.COMMON.getValue());
+        }
+        if (spaceAddRequest.getSpaceType() == null) {
+            spaceAddRequest.setSpaceType(SpaceTypeEnum.PRIVATE.getValue());
+        }
+        // 在此处将实体类和 DTO 进行转换
+        Space space = new Space();
+        BeanUtils.copyProperties(spaceAddRequest, space);
+        space.setUserId(loginUser.getId());
+        // 填充数据
+        this.fillSpaceBySpaceLevel(space);
+
         validSpace(space, true);
 
         // 权限校验
@@ -67,17 +97,39 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space> implements
         Long userId = loginUser.getId();
         synchronized (lockMap.computeIfAbsent(userId, k -> new Object())) {
             try {
-                return transactionTemplate.execute(status -> {
-                    if (isExistSpaceByUserId(userId)) {
-                        throw new BusinessException(ErrorCode.SYSTEM_ERROR, "用户已存在私有空间");
+                 Long newSpaceId = transactionTemplate.execute(status -> {
+                    if (!userService.isAdmin(loginUser)) {
+                        boolean exists = this.lambdaQuery()
+                                .eq(Space::getUserId, userId)
+                                .eq(Space::getSpaceType, spaceAddRequest.getSpaceType())
+                                .exists();
+                        ThrowUtils.throwIf(exists, ErrorCode.OPERATION_ERROR, "每个用户每类空间仅能创建一个");
                     }
-                    save(space);
+                    boolean result = this.save(space);
+                    ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+                     // 如果是团队空间，关联新增团队成员记录
+                     if (SpaceTypeEnum.TEAM.getValue() == spaceAddRequest.getSpaceType()) {
+                         SpaceUser spaceUser = new SpaceUser();
+                         spaceUser.setSpaceId(space.getId());
+                         spaceUser.setUserId(userId);
+                         spaceUser.setSpaceRole(SpaceRoleEnum.ADMIN.getValue());
+                         result = spaceUserService.save(spaceUser);
+                         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "创建团队成员记录失败");
+                     }
                     return space.getId();
                 });
+//                return transactionTemplate.execute(status -> {
+//                    if (isExistSpaceByUserId(userId)) {
+//                        throw new BusinessException(ErrorCode.SYSTEM_ERROR, "用户已存在私有空间");
+//                    }
+//                    save(space);
+//                    return space.getId();
+//                });
             } finally {
                 lockMap.remove(userId);
             }
         }
+        return space.getId();
     }
 
     @Override
@@ -158,6 +210,7 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space> implements
                 .eq(ObjUtil.isNotEmpty(request.getId()), "id", request.getId())
                 .eq(ObjUtil.isNotEmpty(request.getUserId()), "userId", request.getUserId())
                 .like(StringUtils.isNotBlank(request.getSpaceName()), "spaceName", request.getSpaceName())
+                .eq(ObjUtil.isNotEmpty(request.getSpaceType()), "spaceType", request.getSpaceType())
                 .eq(ObjUtil.isNotEmpty(request.getSpaceLevel()), "spaceLevel", request.getSpaceLevel())
                 .orderBy(StringUtils.isNotBlank(request.getSortField()),
                         "ascend".equals(request.getSortOrder()),
@@ -170,6 +223,19 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space> implements
 
         String name = space.getSpaceName();
         Integer level = space.getSpaceLevel();
+
+        Integer spaceType = space.getSpaceType();
+        SpaceTypeEnum spaceTypeEnum = SpaceTypeEnum.getEnumByValue(spaceType);
+
+        if (isAdd) {
+            if (spaceTypeEnum == null) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间类型非法");
+            }
+        }
+
+        if ( spaceType != null && spaceTypeEnum ==null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间类型不存在");
+        }
 
         if (isAdd) {
             ThrowUtils.throwIf(StringUtils.isBlank(name), ErrorCode.PARAMS_ERROR, "空间名称不能为空");

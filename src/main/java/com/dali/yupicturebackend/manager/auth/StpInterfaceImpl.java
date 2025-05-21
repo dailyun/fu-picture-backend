@@ -1,5 +1,6 @@
 package com.dali.yupicturebackend.manager.auth;
 
+import cn.dev33.satoken.stp.StpInterface;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.ObjectUtil;
@@ -25,22 +26,30 @@ import com.dali.yupicturebackend.service.SpaceService;
 import com.dali.yupicturebackend.service.SpaceUserService;
 import com.dali.yupicturebackend.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 
 import static com.dali.yupicturebackend.constant.UserConstant.USER_LOGIN_STATE;
 
-public class StpInterfaceImpl {
+@Component
+public class StpInterfaceImpl implements StpInterface {
     @Value("${server.servlet.context-path}")
     private String contextPath;
 
+    @Resource
     private SpaceUserAuthManager spaceUserAuthManager;
+    @Resource
     private SpaceUserService spaceUserService;
+    @Resource
     private PictureService pictureService;
+    @Resource
     private UserService userService;
+    @Resource
     private SpaceService spaceService;
 
     /**
@@ -80,6 +89,7 @@ public class StpInterfaceImpl {
         return authRequest;
     }
 
+    @Override
     public List<String> getPermissionList(Object loginId, String loginType) {
         //  判断 loginType，仅对类型为 "space" 进行权限校验
         if (!StpKit.SPACE_TYPE.equals(loginType)) {
@@ -170,6 +180,19 @@ public class StpInterfaceImpl {
         }
 
     }
+
+    /**
+     * 返回一个账号所拥有的角色标识集合 (权限与角色可分开校验)
+     */
+    @Override
+    public List<String> getRoleList(Object loginId, String loginType) {
+        // 本 list 仅做模拟，实际项目中要根据具体业务逻辑来查询角色
+        List<String> list = new ArrayList<String>();
+        list.add("admin");
+        list.add("super-admin");
+        return list;
+    }
+
     private boolean isAllFieldsNull(Object obj) {
         if (obj == null) {
             return true;
@@ -178,4 +201,6 @@ public class StpInterfaceImpl {
                 .map(field -> ReflectUtil.getFieldValue(obj, field))
                 .allMatch(ObjectUtil::isEmpty);
     }
+
+
 }

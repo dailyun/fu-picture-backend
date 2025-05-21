@@ -9,6 +9,7 @@ import com.dali.yupicturebackend.constant.UserConstant;
 import com.dali.yupicturebackend.exception.BusinessException;
 import com.dali.yupicturebackend.exception.ErrorCode;
 import com.dali.yupicturebackend.exception.ThrowUtils;
+import com.dali.yupicturebackend.manager.auth.SpaceUserAuthManager;
 import com.dali.yupicturebackend.model.dto.space.*;
 import com.dali.yupicturebackend.model.entity.Space;
 import com.dali.yupicturebackend.model.entity.User;
@@ -19,6 +20,7 @@ import com.dali.yupicturebackend.service.SpaceService;
 import com.dali.yupicturebackend.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -36,6 +38,8 @@ public class SpaceController {
     private SpaceService spaceService;
     @Resource
     private UserService userService;
+    @Autowired
+    private SpaceUserAuthManager spaceUserAuthManager;
 
 
     @PostMapping("/update")
@@ -111,7 +115,11 @@ public class SpaceController {
         ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
         Space space = spaceService.getById(id);
         ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR);
-        return ResultUtils.success(spaceService.getSpaceVO(space, request));
+        SpaceVO spaceVO = spaceService.getSpaceVO(space, request);
+        User loginUser = userService.getLoginUser(request);
+        List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
+        spaceVO.setPermissionList(permissionList);
+        return ResultUtils.success(spaceVO);
     }
 
     /**

@@ -11,6 +11,8 @@ import com.dali.yupicturebackend.constant.UserConstant;
 import com.dali.yupicturebackend.exception.BusinessException;
 import com.dali.yupicturebackend.exception.ErrorCode;
 import com.dali.yupicturebackend.exception.ThrowUtils;
+import com.dali.yupicturebackend.manager.auth.annotation.SaSpaceCheckPermission;
+import com.dali.yupicturebackend.manager.auth.model.SpaceUserPermissionConstant;
 import com.dali.yupicturebackend.model.dto.picture.PictureUploadByBatchRequest;
 import com.dali.yupicturebackend.model.dto.picture.PictureUploadRequest;
 import com.dali.yupicturebackend.model.entity.Picture;
@@ -61,7 +63,7 @@ public class PictureController {
      * 上传图片（可重新上传）
      */
     @PostMapping("/upload")
-
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_UPLOAD)
     public BaseResponse<PictureVO> uploadPicture(
             @RequestPart("file") MultipartFile multipartFile,
             PictureUploadRequest pictureUploadRequest,
@@ -266,6 +268,7 @@ public class PictureController {
      * 通过 URL 上传图片（可重新上传）
      */
     @PostMapping("/upload/url")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_UPLOAD)
     public BaseResponse<PictureVO> uploadPictureByUrl(
             @RequestBody PictureUploadRequest pictureUploadRequest,
             HttpServletRequest request) {

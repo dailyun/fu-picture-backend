@@ -78,11 +78,11 @@ public class SpaceController {
     }
 
     @PostMapping("/add")
-    public BaseResponse<Boolean> addSpace(@RequestBody SpaceAddRequest spaceAddRequest,HttpServletRequest request) {
+    public BaseResponse<Long> addSpace(@RequestBody SpaceAddRequest spaceAddRequest,HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
 
-        spaceService.addSpace(spaceAddRequest, loginUser);
-        return ResultUtils.success(true);
+        Long spaceId= spaceService.addSpace(spaceAddRequest, loginUser);
+        return ResultUtils.success(spaceId);
     }
 
     @PostMapping("/delete")

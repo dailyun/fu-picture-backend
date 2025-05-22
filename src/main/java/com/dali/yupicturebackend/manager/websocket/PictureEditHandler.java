@@ -2,6 +2,7 @@ package com.dali.yupicturebackend.manager.websocket;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.json.JSONUtil;
+import com.dali.yupicturebackend.manager.websocket.disruptor.PictureEditEventProducer;
 import com.dali.yupicturebackend.manager.websocket.model.PictureEditActionEnum;
 import com.dali.yupicturebackend.manager.websocket.model.PictureEditMessageTypeEnum;
 import com.dali.yupicturebackend.manager.websocket.model.PictureEditRequestMessage;
@@ -19,6 +20,7 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
+import javax.annotation.Resource;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -86,37 +88,21 @@ public class PictureEditHandler extends TextWebSocketHandler {
         broadcastToPicture(pictureId, pictureEditResponseMessage);
     }
 
+    @Resource
+    private PictureEditEventProducer pictureEditEventProducer;
+
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         // 将消息解析为 PictureEditMessage
         PictureEditRequestMessage pictureEditRequestMessage = JSONUtil.toBean(message.getPayload(), PictureEditRequestMessage.class);
-        String type = pictureEditRequestMessage.getType();
-        PictureEditMessageTypeEnum pictureEditMessageTypeEnum = PictureEditMessageTypeEnum.valueOf(type);
-
         // 从 Session 属性中获取公共参数
         Map<String, Object> attributes = session.getAttributes();
         User user = (User) attributes.get("user");
         Long pictureId = (Long) attributes.get("pictureId");
-
-        // 调用对应的消息处理方法
-        switch (pictureEditMessageTypeEnum) {
-            case ENTER_EDIT:
-                handleEnterEditMessage(pictureEditRequestMessage, session, user, pictureId);
-                break;
-            case EDIT_ACTION:
-                handleEditActionMessage(pictureEditRequestMessage, session, user, pictureId);
-                break;
-            case EXIT_EDIT:
-                handleExitEditMessage(pictureEditRequestMessage, session, user, pictureId);
-                break;
-            default:
-                PictureEditResponseMessage pictureEditResponseMessage = new PictureEditResponseMessage();
-                pictureEditResponseMessage.setType(PictureEditMessageTypeEnum.ERROR.getValue());
-                pictureEditResponseMessage.setMessage("消息类型错误");
-                pictureEditResponseMessage.setUser(userService.getUserVO(user));
-                session.sendMessage(new TextMessage(JSONUtil.toJsonStr(pictureEditResponseMessage)));
-        }
+        // 生产消息
+        pictureEditEventProducer.publishEvent(pictureEditRequestMessage, session, user, pictureId);
     }
+
 
     public void handleEnterEditMessage(PictureEditRequestMessage pictureEditRequestMessage, WebSocketSession session, User user, Long pictureId) throws Exception {
         // 没有用户正在编辑该图片，才能进入编辑

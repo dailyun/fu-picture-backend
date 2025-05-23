@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.dali.yupicturebackend.mapper.SpaceMapper">
+<mapper namespace="com.dali.fupicturebackend.mapper.SpaceMapper">
 
-    <resultMap id="BaseResultMap" type="com.dali.yupicturebackend.model.entity.Space">
+    <resultMap id="BaseResultMap" type="com.dali.fupicturebackend.model.entity.Space">
             <id property="id" column="id" jdbcType="BIGINT"/>
             <result property="spaceName" column="spaceName" jdbcType="VARCHAR"/>
             <result property="spaceLevel" column="spaceLevel" jdbcType="INTEGER"/>

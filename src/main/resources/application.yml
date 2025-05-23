@@ -4,7 +4,7 @@ server:
     context-path: /api
 spring:
   application:
-    name: yu-picture-backend
+    name: fu-picture-backend
   # 数据库配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -46,4 +46,4 @@ knife4j:
       default:
         api-rule: package
         api-rule-resources:
-          - com.dali.yupicturebackend.controller
+          - com.dali.fupicturebackend.controller

@@ -3,10 +3,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.dali</groupId>
-    <artifactId>yu-picture-backend</artifactId>
+    <artifactId>fu-picture-backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>yu-picture-backend</name>
-    <description>yu-picture-backend</description>
+    <name>fu-picture-backend</name>
+    <description>fu-picture-backend</description>
     <properties>
         <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -170,7 +170,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
                 <configuration>
-                    <mainClass>com.dali.yupicturebackend.YuPictureBackendApplication</mainClass>
+                    <mainClass>com.dali.fupicturebackend.FuPictureBackendApplication</mainClass>
 
                 </configuration>
                 <executions>

@@ -250,8 +250,8 @@ public class PictureController {
         @GetMapping("/tag_category")
     public BaseResponse<PictureTagCategory> listPictureTagCategory() {
         PictureTagCategory pictureTagCategory = new PictureTagCategory();
-        List<String> tagList = Arrays.asList("原神","Furina" );
-        List<String> categoryList = Arrays.asList("好图","黄图");
+        List<String> tagList = Arrays.asList("原神","黄博鸿" );
+        List<String> categoryList = Arrays.asList("日常","活动","校园风景");
         pictureTagCategory.setTagList(tagList);
         pictureTagCategory.setCategoryList(categoryList);
         return ResultUtils.success(pictureTagCategory);

@@ -1,85 +1,51 @@
-# 福图智能素材平台后端
+# Fu Picture Backend
 
-福图智能素材平台的后端服务基于 Spring Boot 构建，为 Web、移动和管理端客户端提供统一的 API 能力。本仓库聚焦业务素材管理与周边配套能力，负责衔接 AI 绘图产物、内容存储、用户运营与订单履约等核心流程。
+![Fu Picture API workflow illustration](docs/assets/header.svg)
 
-## 项目架构概览
+**图片管理应用后端：上传、审核、空间、成员权限与协同编辑。**
 
-后端整体遵循分层架构：
+[配套前端](https://github.com/dailyun/fu-picture-frontend) · [控制器](src/main/java/com/dali/fupicturebackend/controller/) · [建表脚本](create_table.sql) · [接口示例](httpTest/)
 
-```
-┌────────────────────────────────────────────┐
-│                  客户端                    │
-│ Web 前台 · 管理端控制台 · 小程序等多终端入口 │
-└────────────────────────────────────────────┘
-                 │  HTTPS / RESTful API
-┌────────────────────────────────────────────┐
-│                API Gateway                 │
-│ 统一鉴权、流量控制、灰度/限流、日志追踪             │
-└────────────────────────────────────────────┘
-                 │  内网调用
-┌────────────────────────────────────────────┐
-│              Spring Boot 服务层             │
-│ ┌────────────────┬──────────────────────┐ │
-│ │ 业务域服务      │ 公共支撑组件               │ │
-│ │ 素材、用户、订单 │ 鉴权、异步任务、日志、通知等 │ │
-│ └────────────────┴──────────────────────┘ │
-└────────────────────────────────────────────┘
-                 │  数据访问
-┌────────────────────────────────────────────┐
-│                数据与 AI 能力              │
-│ MySQL · Redis · 对象存储 · 模型推理服务         │
-└────────────────────────────────────────────┘
-```
+## 模块导航
 
-## 核心功能模块
+| 模块 | 源码中的能力 | 入口 |
+| --- | --- | --- |
+| 图片 | 文件与 URL 上传、批量上传、筛选、审核 | [PictureController](src/main/java/com/dali/fupicturebackend/controller/PictureController.java) |
+| 空间 | 创建、查询与编辑空间 | [SpaceController](src/main/java/com/dali/fupicturebackend/controller/SpaceController.java) |
+| 成员 | 空间成员与角色管理 | [SpaceUserController](src/main/java/com/dali/fupicturebackend/controller/SpaceUserController.java) |
+| 用户 | 注册、登录与用户管理 | [UserController](src/main/java/com/dali/fupicturebackend/controller/UserController.java) |
+| 上传存储 | 文件处理与 COS 对接 | [上传模板](src/main/java/com/dali/fupicturebackend/manager/upload/) |
+| 协同编辑 | WebSocket 与 Disruptor 事件处理 | [协同模块](src/main/java/com/dali/fupicturebackend/manager/websocket/) |
 
-- **素材管理**：素材上传、审核、分类、标签管理及检索能力。
-- **AI 绘图协同**：对接绘图模型推理接口，管理任务队列与生成结果落库。
-- **用户与权限**：账号注册、登录、角色/权限模型、第三方登录扩展。
-- **订单计费**：套餐与积分、订单创建、支付状态回调、消耗统计。
-- **运营工具**：公告通知、内容审核、数据看板、定时任务调度。
+## 架构
 
-## 技术选型
-
-| 模块 | 说明 |
-| ---- | ---- |
-| 后端框架 | Spring Boot 3.x、Spring MVC、Spring Security |
-| 数据层 | MyBatis-Plus、MySQL 8、Redis、对象存储（如 MinIO / OSS） |
-| 消息与任务 | RabbitMQ / Kafka（异步任务与事件通知）、Quartz 定时任务 |
-| 接口规范 | RESTful API、OpenAPI (Swagger) 文档 |
-| 运维支持 | Docker、Docker Compose、Jenkins / GitHub Actions 持续集成 |
-| 观测能力 | Spring Boot Actuator、Prometheus、Grafana |
-
-## 开发与运行
-
-1. **环境要求**
-   - JDK 17+
-   - Maven 3.8+
-   - MySQL 与 Redis 实例
-
-2. **本地启动**
-   ```bash
-   mvn spring-boot:run
-   ```
-
-3. **接口调试**
-   - 访问 `http://localhost:8080/doc.html` (如集成 Swagger UI)
-   - Postman / Hoppscotch 调试 RESTful API
-
-4. **部署建议**
-   - 使用 Docker 镜像部署，结合 Docker Compose 或 K8s 管理。
-   - 借助 CI/CD 管道完成构建与回滚控制。
-
-## 目录结构
-
-```
-.
-├── src/main/java        # 核心业务代码
-├── src/main/resources   # 配置与静态资源
-├── httpTest             # 接口调试示例
-├── create_table.sql     # 数据库初始化脚本
-└── README.md            # 项目说明文档（本文件）
+```mermaid
+flowchart LR
+    A[图片管理前端] --> B[Controller]
+    B --> C[Service]
+    C --> D[MyBatis-Plus / MySQL]
+    C --> E[COS 对象存储]
+    C --> F[Redis / Caffeine]
+    A <--> G[WebSocket 协同编辑]
+    G --> H[Disruptor 事件处理]
 ```
 
-欢迎贡献改进意见或提交 Pull Request！
+## 项目配置
 
+依赖以 [pom.xml](pom.xml) 为准：Spring Boot **2.7.6**、MyBatis-Plus、MySQL、Redis、Caffeine、腾讯云 COS、Sa-Token、WebSocket 与 Disruptor。Maven 的源码与目标版本配置为 Java 1.8；实际运行 JDK 还需满足所有依赖的要求。
+
+[create_table.sql](create_table.sql)包含 `user`、`picture`、`space` 和 `space_user` 四张表。
+
+## 本地启动
+
+准备 Maven、满足依赖要求的 JDK、MySQL、Redis 和 COS 配置；先检查建表脚本，再在自己的开发数据库初始化。对象存储配置项见 [CosClientConfig](src/main/java/com/dali/fupicturebackend/config/CosClientConfig.java)，凭据应保存在本机私有配置中。
+
+```bash
+mvn spring-boot:run
+```
+
+服务地址和端口取决于本机配置。前端请求基址需要与后端一致；接口调用示例可参考 [httpTest](httpTest/)。
+
+## English overview
+
+Backend for the companion image-management frontend. The source includes picture uploads and review, spaces, member roles, COS storage integration, and WebSocket collaboration. Use the linked implementation map and Maven configuration when exploring or adapting the project.
